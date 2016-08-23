@@ -9,8 +9,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bitfinex": "^1.0.3",
     "btce-deal": "^0.2.1",
     "flat": "^2.0.1",
+    "kraken-api": "file:kraken-api",
+    "node.bittrex.api": "^0.2.2",
     "nonce": "^1.0.4",
     "poloniex.js": "0.0.6",
     "request": "^2.74.0"
