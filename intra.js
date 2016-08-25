@@ -4,8 +4,6 @@ var n = require('nonce')();
 
 //Objects Definition
 var myDB = {};
-var balance = {};
-
 
 // xchngfees ['name', maker, taker]
 xchngfees = [
@@ -24,7 +22,6 @@ function setFees(){
 		fees[xchg] = {};
 		fees[xchg]['m'] = params[1];
 		fees[xchg]['t'] = params[2];
-		balance[xchg] = {};
 	})
 
 }
@@ -68,7 +65,7 @@ function poloTicker(){
 	poloniex.getTicker(function(err, data){
 
 		if (err){
-			console.log('ERRO POLO TICKER'+err);
+			console.log(err);
 		}
 		for (var i in data) {
 			if (data[i].baseVolume > 20) {
@@ -91,28 +88,6 @@ function poloTicker(){
 		}  
 	});
 }
-
-
-function poloBal(){
-
-	poloniex.myBalances(function(err, data){
-
-
-	    if (err){
-	        console.log('ERRO POLO BALANCE '+err);
-	    }
-	    for (var i in data){
-	    	if (data[i] > 0) {
-	    	var low = i.toLowerCase();
-	    	balance.polo[low] = data[i];
-
-	    	}
-	    }
-	    	
-	});
-}
-
-
 
 
 // 
@@ -143,31 +118,9 @@ function btceTicker(){
 			// console.log(myDB);
 	})    
 	.error(function (data) {
-		console.log('ERRO BTC TICKER' + data);
 	});
 
 }
-
-
-function btceBal (){
-
-	btceTrade.getInfo()
-	.then(function (data) {
-		var funds = data.funds;
-		for (var i in funds){
-			if (funds[i] > 0.001) {
-			balance.btce[i] = funds[i];
-			}
-
-		} 
-    })
-    .error(function (data) {
-        console.log('erro BTCE BALANCE: '+data);
-    });
-
-
-}
-
 
 // BITFINEX FUNCTIONS
 
@@ -178,7 +131,7 @@ function finexTicker(){
 		bitfinex.ticker(pair, 
 		function(err, res){
 			if (err) {
-				console.log('ERRO FINEX TICKER'+err);
+				console.log(err);
 			}else{
 				var xchg = 'finex';
 				var low = pair.toLowerCase();
@@ -199,26 +152,6 @@ function finexTicker(){
 	})
 }
 
-
-function finexBal(){
-
-	bitfinex.wallet_balances(function(err, res){
-		if (err) {
-			console.log('ERRO FINEX BALANCE'+err);
-		}else{
-			for (i in res){
-				if (res[i].type === 'exchange') {
-					var data = res[i];
-					if (res[i].available > 0.001) {
-						var curr = res[i].currency;
-						balance.finex[curr] = res[i].available;
-					}
-				}
-			}
-		}
-	})
-}
-
 //
 //KRAKEN FUNCTIONS
 //
@@ -229,7 +162,7 @@ function krakenTicker(){
 	pairs.forEach(function(kkpair){
 		kraken.api('Ticker', {"pair": kkpair}, function(error, data) {
 			if(error) {
-				console.log('ERRO KK TICKER '+error);
+				console.log(error);
 			}
 			else {
 			switch(kkpair){
@@ -273,48 +206,12 @@ function krakenTicker(){
 
 }
 
-function krakenBal(){
-
-	kraken.api('Balance', null, function(error, data) {
-	    if(error) {
-	        console.log('ERRO KK BALANCE ' +error);
-	    }
-	    else {
-	    	for (var i in data.result){
-	    	switch(i){
-			case 'XLTC':
-			var curr = 'ltc';
-			break;
-			case 'XXDG':
-				var curr = 'doge';
-				break;
-			case 'XETH':
-				var curr = 'eth';
-				break;
-			case 'XDAO':
-					var curr = 'dao';
-					break;
-			case 'XETC':
-				var curr = 'etc';
-				break;
-			case 'XXBT':
-				var curr = 'btc';
-			}
-			if(data.result[i] > 0.000001)
-
-	        	balance.kraken[curr] = data.result[i];
-	    	}
-	    }
-	});
-}
-
-
 //
 //BITTREX FUNCTIONS
 //
 
 function bittrexTicker(){
-	bittrex.getmarketsummaries( function(data) {
+	bittrex.getmarketsummaries( function( data ) {
     	for( var i in data.result ) {
     		if(data.result[i].BaseVolume > 20){
     		var xchg = 'bittrex';
@@ -332,41 +229,17 @@ function bittrexTicker(){
 			myDB[objID]['ask'] = data.result[i].Ask;
 			myDB[objID]['last'] = data.result[i].Last;
     		}
-
     	}
 	});
 }
 
 
-
-function bittrexBal(){
-	bittrex.getmarketsummaries( function(data) {
-		for( var i in data.result ) {
-	    	var xpair = data.result[i].MarketName;
-	    	var pairs = xpair.split("-");
-			var spair = pairs[1];
-			bittrex.getbalance({ currency : spair }, function( data ) {
-				if (data.result.Available > 0.0001) {
-					var curr = data.result.Currency;
-					var low = curr.toLowerCase();
-					balance.bittrex[low] = data.result.Available;
-				}
-			});
-		}
-	});
-}
-
-
-
-
-
-
-
 //Profits 
-var iprofit = 0.0075;
-var pprofit = 0.0075;
+var iprofit = 0.006;
+var pprofit = 0.006;
+var pini = 0.001;
 
-
+sudo update-grub
 
 //Comparing Prices
 
@@ -376,6 +249,7 @@ function compare(){
 		var apair =  myDB[objID]['pair'];
 		var pvenda  = myDB[objID]['bid'];
 		var ultvenda = myDB[objID]['last'] *0.9995;
+		var pinit = pvenda * 1.005;
 		for (var objID in myDB) {
 			if( myDB[objID]['xchg'] !== xchgvenda ){
 				var xchgcompra =  myDB[objID]['xchg'];
@@ -383,8 +257,12 @@ function compare(){
 					var pcompra =  myDB[objID]['ask'];
 					var ilucro = (((pvenda * (1 - fees[xchgvenda].m))/(pcompra * (1 + fees[xchgcompra].t))) -1);
 					var ulucro = (((ultvenda* (1 - fees[xchgvenda].m))/(pcompra * (1 + fees[xchgcompra].t))) -1);
+					var init = (((ultvenda* (1 - fees[xchgvenda].m))/(pinit * (1 - fees[xchgvenda].m))) -1);
 					if (ulucro > pprofit){
 					console.log('potential : sell '+apair+' @ '+ultvenda+' @ '+xchgvenda+' buy @ '+pcompra+' @ '+xchgcompra+' @ '+(ulucro*100)+'%. \n');
+						if (init > pini){
+							console.log('reverse init : buy @ '+xchgvenda+' @ '+pinit+' to be sold @'+ultvenda+' safety net @ '+(init*100)+'%. \n');
+							}
 					}
 					if(ilucro > iprofit){
 					console.log('INSTANT  sell '+apair+' @ '+pvenda+' @ '+xchgvenda+' buy @ '+pcompra+' @ '+xchgcompra+' @ '+(ilucro*100)+'%. \n');
@@ -403,41 +281,6 @@ function compare(){
 
 
 
-/*if(balance[xchgvenda][pairv] > 0){
-	if(balance[xchgcompra][pairc] > 0){
-		if(pprofit > iprofit){
-			//create last price onder
-		}else if (iprofit >= pprofit ) {
-			//create instant buy order
-		}
-	}
-}
-*/
-
-
-
-/*
-function getZPairs(){
-	for (var i in myDB){
-		var pairv = myDB[i]['pairs'];
-		console.log(pairv);
-	}
-}
-
-
-setInterval(function runBalances(){
-	getZPairs();
-}, 10000)
-*/
-
-function getBalances(){
-	btceBal();
-	bittrexBal();
-	poloBal();
-	krakenBal();
-	finexBal();
-
-}
 
 
 //Running Parameters
@@ -445,36 +288,20 @@ function getBalances(){
 
 setImmediate(function start(){
 	setFees();
-	getBalances();
 })
 
-
-setInterval(function runBalances(){
-	console.log(balance);
-}, 5000)
-
-
-/*
-setInterval(function runTickers(){
+setInterval(function runGetData(){
 	poloTicker();
 	btceTicker();
 	finexTicker();
 	krakenTicker();
 	bittrexTicker();
-}, 5000)
-*/
-
-/*
-setInterval(function runBalances(){
-	getBalances();
-}, 15000)
+}, 2000)
 
 
 setInterval(function runCompare(){
 	compare();
 	console.log("\n\n\n\n\n\n\n\n\n");
 }, 1000)
-
-*/
 
 

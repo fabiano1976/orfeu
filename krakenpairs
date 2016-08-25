@@ -1,7 +1,6 @@
 kraken pairs
 
-XDAOXETH
-daoeth
+
 
 XDAOXXBT
 daobtc
@@ -12,6 +11,9 @@ etceth
 XETCXXBT
 etcbtc
 
+
+
+
 XLTCXXBT
 ltcbtc
 
@@ -20,3 +22,6 @@ dogebtc
 
 XETHXXBT
 ethbtc
+
+XDAOXETH
+daoeth
