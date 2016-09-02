@@ -84,6 +84,7 @@ function poloTicker(){
 			myDB[objID]['bid'] =  data[i].highestBid;
 			myDB[objID]['ask'] = data[i].lowestAsk;
 			myDB[objID]['last'] = data[i].last;
+			myDB[objID]['vol'] = data[i].baseVolume;
 			}
 		}  
 	});
@@ -114,18 +115,17 @@ function btceTicker(){
 			myDB[objID]['bid'] =  data[i].sell;
 			myDB[objID]['ask'] = data[i].buy;
 			myDB[objID]['last'] = data[i].last;
+			myDB[objID]['vol'] = data[i].vol_cur;
 		}
-			// console.log(myDB);
 	})    
 	.error(function (data) {
 	});
-
 }
 
 // BITFINEX FUNCTIONS
 
 function finexTicker(){
-	var pairs = ['ETHBTC', 'ETCBTC', 'LTCBTC']
+	var pairs = ['ETHBTC','LTCBTC']
 
 	pairs.forEach(function(pair){
 		bitfinex.ticker(pair, 
@@ -147,6 +147,7 @@ function finexTicker(){
 				myDB[objID]['bid'] =  res.bid;
 				myDB[objID]['ask'] = res.ask;
 				myDB[objID]['last'] = res.last_price;
+				myDB[objID]['vol'] = res.volume / res.last_price;
 			}
 		});
 	})
@@ -157,7 +158,7 @@ function finexTicker(){
 //
 
 function krakenTicker(){
-	var pairs = ['XLTCXXBT', 'XXDGXXBT', 'XETHXXBT', 'XDAOXETH', 'XETCXXBT', 'XETCXETH', 'XDAOXXBT'];
+	var pairs = ['XLTCXXBT', 'XXDGXXBT', 'XETHXXBT', 'XDAOXETH', 'XXRPXXBT', 'XDAOXXBT'];
 
 	pairs.forEach(function(kkpair){
 		kraken.api('Ticker', {"pair": kkpair}, function(error, data) {
@@ -178,11 +179,8 @@ function krakenTicker(){
 			case 'XDAOXETH':
 					var spair = 'daoeth';
 					break;
-			case 'XETCXXBT':
-				var spair = 'etcbtc';
-				break;
-			case 'XETCXETH':
-				var spair = 'etceth';
+			case 'XXRPXXBT':
+				var spair = 'xrpbtc';
 				break;
 			case 'XDAOXXBT':
 				var spair = 'daobtc';
@@ -199,7 +197,8 @@ function krakenTicker(){
 			myDB[objID]['pairs'] = pairs;
 			myDB[objID]['bid'] =  data.result[kkpair].b[0];
 			myDB[objID]['ask'] = data.result[kkpair].a[0];
-			myDB[objID]['last'] = data.result[kkpair].c[0]
+			myDB[objID]['last'] = data.result[kkpair].c[0];
+			myDB[objID]['vol'] = data.result[kkpair].v[1] * data.result[kkpair].c[0];
 			}
 		});
 	});
@@ -228,52 +227,57 @@ function bittrexTicker(){
 			myDB[objID]['bid'] =  data.result[i].Bid;
 			myDB[objID]['ask'] = data.result[i].Ask;
 			myDB[objID]['last'] = data.result[i].Last;
+			myDB[objID]['vol'] = data.result[i].BaseVolume;
     		}
     	}
 	});
 }
 
-
 //Profits 
-var iprofit = 0.006;
-var pprofit = 0.006;
-var pini = 0.001;
+var intra = 0.01;
+var mvol = 30;
 
-sudo update-grub
 
 //Comparing Prices
 
 function compare(){
 	for (var objID in myDB) {
-		var xchgvenda =  myDB[objID]['xchg'];
-		var apair =  myDB[objID]['pair'];
-		var pvenda  = myDB[objID]['bid'];
-		var ultvenda = myDB[objID]['last'] *0.9995;
-		var pinit = pvenda * 1.005;
-		for (var objID in myDB) {
-			if( myDB[objID]['xchg'] !== xchgvenda ){
-				var xchgcompra =  myDB[objID]['xchg'];
-				if ( myDB[objID]['pair'] === apair ) {
-					var pcompra =  myDB[objID]['ask'];
-					var ilucro = (((pvenda * (1 - fees[xchgvenda].m))/(pcompra * (1 + fees[xchgcompra].t))) -1);
-					var ulucro = (((ultvenda* (1 - fees[xchgvenda].m))/(pcompra * (1 + fees[xchgcompra].t))) -1);
-					var init = (((ultvenda* (1 - fees[xchgvenda].m))/(pinit * (1 - fees[xchgvenda].m))) -1);
-					if (ulucro > pprofit){
-					console.log('potential : sell '+apair+' @ '+ultvenda+' @ '+xchgvenda+' buy @ '+pcompra+' @ '+xchgcompra+' @ '+(ulucro*100)+'%. \n');
-						if (init > pini){
-							console.log('reverse init : buy @ '+xchgvenda+' @ '+pinit+' to be sold @'+ultvenda+' safety net @ '+(init*100)+'%. \n');
-							}
-					}
-					if(ilucro > iprofit){
-					console.log('INSTANT  sell '+apair+' @ '+pvenda+' @ '+xchgvenda+' buy @ '+pcompra+' @ '+xchgcompra+' @ '+(ilucro*100)+'%. \n');
-					}
-
-				}
-
+		if (myDB[objID]['vol'] >= mvol) {
+			var xchg =  myDB[objID]['xchg'];
+			var pair =  myDB[objID]['pair'];
+			var bid  = myDB[objID]['bid'];
+			var last = myDB[objID]['last'];
+			var ask = myDB[objID]['ask'];
+			var mid = (ask+bid)/2;
+			var mid2ask = ((1 - (ask * (1 - fees[xchg].t))/(mid * (1 + fees[xchg].t))));
+			var mid2bid = ((1 - (bid * (1 - fees[xchg].t))/(mid * (1 + fees[xchg].t))))*-1;
+			var mid2last = ((1 - (last * (1 - fees[xchg].t))/(mid * (1 + fees[xchg].t))));
+			var bid2ask = ((1 - (bid * (1 - fees[xchg].t))/(ask * (1 + fees[xchg].t))));
+			var ask2bid = ((1 - (ask * (1 - fees[xchg].t))/(bid * (1 + fees[xchg].t))));
+			var ask2last = ((1 - (ask * (1 - fees[xchg].t))/(last * (1 + fees[xchg].t))));
+			var bid2last = ((1 - (bid * (1 - fees[xchg].t))/(last * (1 + fees[xchg].t))));
+			if (mid2ask > intra) {
+				console.log('mid2ask @ '+pair+' @ '+xchg+' = '+ mid2ask);
 			}
-
+			if (mid2bid > intra) {
+				console.log('mid2bid @ '+pair+' @ '+xchg+' = '+ mid2bid);
+			}
+			if (mid2last > intra) {
+				console.log('mid2last @ '+pair+' @ '+xchg+' = '+ mid2last);
+			}
+			if (bid2ask > intra) {
+				console.log('bid2ask @ '+pair+' @ '+xchg+' = '+ bid2ask);
+			}
+			if (ask2bid > intra) {
+				console.log('ask2bid @ '+pair+' @ '+xchg+' = '+ ask2bid);
+			}
+			if (ask2last > intra) {
+				console.log('ask2last @ '+pair+' @ '+xchg+' = '+ ask2last);
+			}
+			if (bid2last > intra) {
+				console.log('bid2last @ '+pair+' @ '+xchg+' = '+ bid2last);
+			}
 		}
-			
 	}
 
 }
@@ -296,12 +300,11 @@ setInterval(function runGetData(){
 	finexTicker();
 	krakenTicker();
 	bittrexTicker();
-}, 2000)
+}, 10000)
 
 
 setInterval(function runCompare(){
 	compare();
 	console.log("\n\n\n\n\n\n\n\n\n");
-}, 1000)
-
+}, 10000)
 

@@ -157,7 +157,7 @@ function finexTicker(){
 //
 
 function krakenTicker(){
-	var pairs = ['XLTCXXBT', 'XXDGXXBT', 'XETHXXBT', 'XDAOXETH', 'XETCXXBT', 'XETCXETH', 'XDAOXXBT'];
+	var pairs = ['XXRPXXBT', 'XLTCXXBT', 'XXDGXXBT', 'XETHXXBT', 'XDAOXETH', 'XETCXXBT', 'XETCXETH', 'XDAOXXBT'];
 
 	pairs.forEach(function(kkpair){
 		kraken.api('Ticker', {"pair": kkpair}, function(error, data) {
@@ -186,6 +186,9 @@ function krakenTicker(){
 				break;
 			case 'XDAOXXBT':
 				var spair = 'daobtc';
+				break;
+			case 'XXRPXXBT':
+				var spair = 'xrpbtc';
 			}
 			var xchg = 'kraken';
 			var apair = spair.slice(0, 3);
@@ -235,9 +238,9 @@ function bittrexTicker(){
 
 
 //Profits 
-var iprofit = 0.006;
-var pprofit = 0.006;
-var pini = 0.001;
+var iprofit = 0.01;
+var pprofit = 0.01;
+var pini = 0.015;
 
 
 
